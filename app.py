@@ -13,14 +13,11 @@ st.set_page_config(page_title="YAMALcity.pokahh - Calculator", layout="wide")
 
 st.markdown("""
     <style>
-    /* Dark Background & Bright White Text for UI */
     .stApp { background-color: #0E1117; color: white; }
     label, p, .stRadio > div > label, .stSelectbox > label {
         color: white !important;
         font-weight: 500 !important;
     }
-    
-    /* YAMALcity Yellow Buttons with BLACK text */
     div.stButton > button:first-child, div.stButton > button:first-child * {
         background-color: #FFD700 !important;
         color: black !important;
@@ -60,22 +57,10 @@ ranks_str = "AKQJT98765432"
 suits = ['s','h','d','c']
 
 DEFAULT_RANGES = {
-    "UTG": {
-        "Open": "22+, A2s+, KTs+, QTs+, JTs, T9s, 98s, 87s, 76s, AKo, AQo, AJo",
-        "3-Bet": "QQ+, T9s, 87s, AKs, AKo, A5s, A4s, A3s, A2s"
-    },
-    "MP": {
-        "Open": "22+, A2s+, KTs+, QTs+, JTs, T9s, 98s, 87s, 76s, AKo, AQo, AJo",
-        "3-Bet": "QQ+, T9s, 87s, AKs, AKo, A5s, A4s, A3s, A2s"
-    },
-    "CO": {
-        "Open": "22+, A2s+, K7s+, Q9s+, JTs-43s, J9s-53s, ATo+, KJo+",
-        "3-Bet": "JJ+, AKs, AKo, A7s, A5s-A2s, T9s, 87s, 54s"
-    },
-    "BTN": {
-        "Open": "22+, A2s+, K2s+, Q5s+, J7s+, T9s-43s, T8s-53s, T7s-96s, A7o+, K9o+, QTo+, JTo",
-        "3-Bet": "99+, ATs+, KJs+, QJs, JTs, AQo+, A5s-A2s, 97s, 75s"
-    },
+    "UTG": {"Open": "22+, A2s+, KTs+, QTs+, JTs, T9s, 98s, 87s, 76s, AKo, AQo, AJo", "3-Bet": "QQ+, T9s, 87s, AKs, AKo, A5s, A4s, A3s, A2s"},
+    "MP": {"Open": "22+, A2s+, KTs+, QTs+, JTs, T9s, 98s, 87s, 76s, AKo, AQo, AJo", "3-Bet": "QQ+, T9s, 87s, AKs, AKo, A5s, A4s, A3s, A2s"},
+    "CO": {"Open": "22+, A2s+, K7s+, Q9s+, JTs-43s, J9s-53s, ATo+, KJo+", "3-Bet": "JJ+, AKs, AKo, A7s, A5s-A2s, T9s, 87s, 54s"},
+    "BTN": {"Open": "22+, A2s+, K2s+, Q5s+, J7s+, T9s-43s, T8s-53s, T7s-96s, A7o+, K9o+, QTo+, JTo", "3-Bet": "99+, ATs+, KJs+, QJs, JTs, AQo+, A5s-A2s, 97s, 75s"},
     "SB": {
         "Open": "22+, A2s+, K2s+, Q5s+, J7s+, T9s-43s, T8s-53s, T7s-96s, A8o+, K9o+, QTo+, J9o+, 98o",
         "3-Bet vs Early": "QQ+, AKs, AKo, T9s, 87s, A5s-A2s",
@@ -92,7 +77,7 @@ if "custom_ranges" not in st.session_state or "3-Bet vs Late" not in st.session_
     st.session_state.custom_ranges = DEFAULT_RANGES.copy()
 
 # ---------------------------------------------------------------
-# ADVANCED POKER MATH ENGINE (Fixed Parser)
+# ADVANCED POKER MATH ENGINE (Monte Carlo -> Solid Colors)
 # ---------------------------------------------------------------
 def expand_range(range_string):
     if not range_string or range_string.strip() == "": return []
@@ -102,23 +87,23 @@ def expand_range(range_string):
         try:
             if '-' in itm:
                 start, end = itm.split('-')
-                if len(start) == 2 and len(end) == 2: # AA-QQ
+                if len(start) == 2 and len(end) == 2:
                     i1, i2 = ranks_str.index(start[0]), ranks_str.index(end[0])
                     out.extend([ranks_str[i]*2 for i in range(min(i1,i2), max(i1,i2)+1)])
                 elif len(start) == 3 and len(end) == 3:
                     s_type = start[2]
-                    if start[0] == end[0]: # A5s-A2s
+                    if start[0] == end[0]:
                         i1, i2 = ranks_str.index(start[1]), ranks_str.index(end[1])
                         out.extend([f"{start[0]}{ranks_str[i]}{s_type}" for i in range(min(i1,i2), max(i1,i2)+1)])
-                    else: # JTs-43s
+                    else:
                         i1, i2 = ranks_str.index(start[0]), ranks_str.index(end[0])
                         gap = ranks_str.index(start[1]) - i1
                         out.extend([f"{ranks_str[i]}{ranks_str[i+gap]}{s_type}" for i in range(min(i1,i2), max(i1,i2)+1)])
             elif itm.endswith('+'):
-                if len(itm) == 3: # 22+
+                if len(itm) == 3:
                     idx = ranks_str.index(itm[0])
                     out.extend([ranks_str[i]*2 for i in range(0, idx+1)])
-                elif len(itm) == 4: # AJo+
+                elif len(itm) == 4:
                     h, l, s = itm[0], itm[1], itm[2]
                     idx_h, idx_l = ranks_str.index(h), ranks_str.index(l)
                     out.extend([f"{h}{ranks_str[i]}{s}" for i in range(idx_h+1, idx_l+1)])
@@ -185,33 +170,49 @@ def build_grid():
             else: g.loc[r1,r2]=r2+r1+"o"
     return g
 
-def evaluate_street(hero_cards, vill_range, board, evaluator):
+def evaluate_street_equity(hero_cards, vill_range, current_board, evaluator, deck_cards):
     results = {}
-    dead_cards = hero_cards + board
     total_w, total_l, total_t = 0, 0, 0
+    dead_base = hero_cards + current_board
     
     for hand_str in vill_range:
-        valid_combos = get_all_combos(hand_str, dead_cards)
+        valid_combos = get_all_combos(hand_str, dead_base)
         if not valid_combos: continue
+        
         w, l, t = 0, 0, 0
         for v_cards in valid_combos:
-            hs = evaluator.evaluate(board, hero_cards)
-            vs = evaluator.evaluate(board, v_cards)
-            if hs < vs: w += 1
-            elif hs > vs: l += 1
-            else: t += 1
+            dead_now = dead_base + v_cards
+            available_deck = [c for c in deck_cards if c not in dead_now]
+            cards_to_draw = 5 - len(current_board)
             
-        total_w += w; total_l += l; total_t += t
-        
-        # True 1-vs-1 evaluation for cell colors
+            if cards_to_draw == 0:
+                runouts = [[]] 
+            elif cards_to_draw == 1:
+                runouts = [[c] for c in available_deck] 
+            else:
+                runouts = [random.sample(available_deck, 2) for _ in range(150)]
+                
+            for runout in runouts:
+                final_board = current_board + runout
+                hs = evaluator.evaluate(final_board, hero_cards)
+                vs = evaluator.evaluate(final_board, v_cards)
+                if hs < vs: w += 1
+                elif hs > vs: l += 1
+                else: t += 1
+                
         total_cell = w + l + t
-        cell_eq = (w + 0.5 * t) / total_cell if total_cell > 0 else 0
-        if cell_eq > 0.5001: results[hand_str] = 1        
-        elif cell_eq < 0.4999: results[hand_str] = -1     
-        else: results[hand_str] = 0                       
-        
+        if total_cell > 0:
+            cell_eq = (w + 0.5 * t) / total_cell
+            
+            # STRICT 3-COLOR LOGIC:
+            if cell_eq > 0.505: results[hand_str] = 1       # Green (Clear Advantage)
+            elif cell_eq < 0.495: results[hand_str] = -1    # Red (Clear Disadvantage)
+            else: results[hand_str] = 0                     # Orange (Exact Coinflip or Split)
+            
+            total_w += w; total_l += l; total_t += t
+            
     total_combos = total_w + total_l + total_t
-    overall_eq = ((total_w + (0.5 * total_t)) / total_combos * 100) if total_combos > 0 else 0.0
+    overall_eq = ((total_w + 0.5 * total_t) / total_combos * 100) if total_combos > 0 else 0.0
     return results, round(overall_eq, 1)
 
 def get_action_key(pos, opponent_pos, base_action):
@@ -237,10 +238,11 @@ def draw_range_preview(range_str):
     fig.patch.set_facecolor('#0E1117') 
     ax.set_facecolor('#0E1117')
     
-    custom_cmap = ListedColormap(["#4D4D4D", "#FFD700"]) # Lighter Grey & Yellow
+    custom_cmap = ListedColormap(["#4D4D4D", "#FFD700"]) 
+    # Text color changed to black and bolded for visibility
     sns.heatmap(df, cmap=custom_cmap, vmin=-1, vmax=1, annot=grid.values, fmt="", 
                 cbar=False, ax=ax, linewidths=.5, linecolor="black", 
-                xticklabels=False, yticklabels=False, annot_kws={"color": "white", "size": 9})
+                xticklabels=False, yticklabels=False, annot_kws={"color": "black", "size": 9, "weight": "bold"})
     plt.tight_layout()
     return fig
 
@@ -258,29 +260,34 @@ def run_simulation(hero_hand_str, hero_pos, vill_pos, vill_action_key, custom_bo
         st.error("Invalid Hero Hand format. Use 'AhKh'")
         return
 
-    deck = Deck()
-    deck.cards = [c for c in deck.cards if c not in hero_cards]
+    full_deck = Deck().cards
     
     if custom_board_str:
         try:
             b_list = custom_board_str.strip().split(" ")
             board_cards = [Card.new(c) for c in b_list]
-            while len(board_cards) < 5: board_cards.append(deck.draw(1)[0] if type(deck.draw(1)) is list else deck.draw(1))
+            deck = Deck()
+            deck.cards = [c for c in full_deck if c not in hero_cards + board_cards]
+            while len(board_cards) < 5: 
+                board_cards.append(deck.draw(1)[0] if type(deck.draw(1)) is list else deck.draw(1))
         except:
             st.error("Invalid Board format. Please use format: 'As Ks Qs'")
             return
     else:
+        deck = Deck()
+        deck.cards = [c for c in full_deck if c not in hero_cards]
         board_cards = deck.draw(5)
         
     flop, turn, river = board_cards[:3], board_cards[:4], board_cards[:5]
-    f_res, flop_eq = evaluate_street(hero_cards, vill_range, flop, evaluator)
-    t_res, turn_eq = evaluate_street(hero_cards, vill_range, turn, evaluator)
-    r_res, river_eq = evaluate_street(hero_cards, vill_range, river, evaluator)
+    f_res, flop_eq = evaluate_street_equity(hero_cards, vill_range, flop, evaluator, full_deck)
+    t_res, turn_eq = evaluate_street_equity(hero_cards, vill_range, turn, evaluator, full_deck)
+    r_res, river_eq = evaluate_street_equity(hero_cards, vill_range, river, evaluator, full_deck)
 
     grid = build_grid()
     R13 = list("AKQJT98765432")
     def mkmap(res_dict):
-        df = pd.DataFrame(-2, index=R13, columns=R13)
+        # We use -2 to represent empty/out-of-range cells so the text isn't hidden by seaborn
+        df = pd.DataFrame(-2, index=R13, columns=R13) 
         for r1 in R13:
             for r2 in R13:
                 hand_name = grid.loc[r1, r2]
@@ -295,7 +302,9 @@ def run_simulation(hero_hand_str, hero_pos, vill_pos, vill_action_key, custom_bo
     fig, ax = plt.subplots(1, 3, figsize=(20, 6))
     fig.patch.set_facecolor('#0E1117') 
     
-    custom_cmap = ListedColormap(["#4D4D4D", "#ff4d4d", "#ffb84d", "#47d147"])
+    # 4 DISCRETE COLORS: (-2 = Grey, -1 = Red, 0 = Orange, 1 = Green)
+    discrete_cmap = ListedColormap(["#4D4D4D", "#ff4d4d", "#ffb84d", "#47d147"])
+    
     sets = [
         (fM, flop, flop_eq, "FLOP EQUITY"), 
         (tM, turn, turn_eq, "TURN EQUITY"), 
@@ -303,10 +312,13 @@ def run_simulation(hero_hand_str, hero_pos, vill_pos, vill_action_key, custom_bo
     ]
     
     for a, (m, cards, pctv, street_name) in zip(ax, sets):
+        a.set_facecolor('#4D4D4D') 
         txt = [card_to_emoji(Card.int_to_str(c)) for c in cards]
-        sns.heatmap(m, cmap=custom_cmap, vmin=-2, vmax=1, annot=grid.values, fmt="", 
+        
+        # Text color changed to black and bolded for visibility
+        sns.heatmap(m, cmap=discrete_cmap, vmin=-2, vmax=1, annot=grid.values, fmt="", 
                     cbar=False, ax=a, linewidths=.5, linecolor="black", 
-                    xticklabels=False, yticklabels=False, annot_kws={"color": "white"})
+                    xticklabels=False, yticklabels=False, annot_kws={"color": "black", "weight": "bold"})
         a.set_title(f"{' '.join(txt)}\n{street_name}: {pctv}%", fontsize=16, fontweight='normal', color='white', pad=15)
         
     plt.tight_layout()
@@ -315,7 +327,7 @@ def run_simulation(hero_hand_str, hero_pos, vill_pos, vill_action_key, custom_bo
     st.markdown("""
         <div style='text-align: center; background-color: #1E1E1E; padding: 10px; border-radius: 5px; margin-top: 10px;'>
             <span style='color: #47d147;'>🟩 <b>Advantage (>50%)</b></span> &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; 
-            <span style='color: #ffb84d;'>🟧 <b>Tie (Exactly 50%)</b></span> &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; 
+            <span style='color: #ffb84d;'>🟧 <b>Tie / Coinflip (50%)</b></span> &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; 
             <span style='color: #ff4d4d;'>🟥 <b>Disadvantage (<50%)</b></span> &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; 
             <span style='color: #A9A9A9;'>🔲 <b>Out of Range</b></span>
         </div>
@@ -325,11 +337,7 @@ def run_simulation(hero_hand_str, hero_pos, vill_pos, vill_action_key, custom_bo
 # ===============================================================
 # MULTI-PAGE TABS UI
 # ===============================================================
-tab_practice, tab_custom, tab_ranges = st.tabs([
-    "🎲 Practice Scenarios", 
-    "⚙️ Custom Scenarios", 
-    "🛠️ Range Builder"
-])
+tab_practice, tab_custom, tab_ranges = st.tabs(["🎲 Practice Scenarios", "⚙️ Custom Scenarios", "🛠️ Range Builder"])
 
 with tab_practice:
     st.subheader("Random Scenario Generator")
@@ -352,7 +360,7 @@ with tab_practice:
         else:
             hero_exact_cards, exact_str = exact_cards(random.choice(h_range_expanded))
             if exact_str:
-                with st.spinner('Calculating...'):
+                with st.spinner('Calculating Monte Carlo Equity...'):
                     run_simulation(exact_str, h_pos, v_pos, vill_action_key, "", use_custom)
 
 with tab_custom:
@@ -372,7 +380,7 @@ with tab_custom:
     st.markdown("<span style='color: white;'>*Please put spaces in between the cards (e.g., As Ks Qs)*</span>", unsafe_allow_html=True)
     
     if st.button("Calculate Equity"):
-        with st.spinner('Calculating...'):
+        with st.spinner('Calculating Monte Carlo Equity...'):
             run_simulation(c_hero_hand, c_hero_pos, c_vill_pos, c_action, c_board, use_custom_c)
 
 with tab_ranges:
