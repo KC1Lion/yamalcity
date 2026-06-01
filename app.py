@@ -13,6 +13,17 @@ st.set_page_config(page_title="YAMALcity.pokahh - Calculator", layout="wide")
 
 st.markdown("""
     <style>
+ 	/* Forces the app to allow pinch-to-zoom on mobile */
+    html, body, [class*="css"] {
+        touch-action: manipulation;
+        zoom: 1;
+    }
+    
+    /* Makes sure data grids can be scrolled horizontally on small screens */
+    div[data-testid="stDataFrame"] {
+        overflow-x: auto;
+        touch-action: pan-x pan-y pinch-zoom;
+    }
     .stApp { background-color: #0E1117; color: white; }
     label, p, .stRadio > div > label, .stSelectbox > label {
         color: white !important;
@@ -36,6 +47,79 @@ elif os.path.exists("logo.png"): st.image("logo.png", width=120)
 
 st.title("♠️ YAMALcity.pokahh")
 st.divider()
+
+
+# ==========================================
+# 2. HYBRID POKER MATH LOGIC
+# ==========================================
+
+def evaluate_single_river_hand(player_hand, opponent_hand, board_cards):
+    """
+    Evaluates the River with NO future runouts.
+    Returns exactly 1.0 (Win), 0.0 (Loss), or 0.5 (Tie).
+    """
+    
+    # ---------------------------------------------------------
+    # INSERT YOUR EXISTING HAND EVALUATOR HERE
+    # Example: score = my_evaluator(hand, board)
+    player_score = 0 # Replace with your evaluator for player
+    opponent_score = 0 # Replace with your evaluator for opponent
+    # ---------------------------------------------------------
+
+    # NOTE: Adjust the < or > depending on your library 
+    # (some libraries treat '1' as a Royal Flush, meaning lower is better).
+    if player_score > opponent_score:  
+        return 1.0  # Player Wins
+    elif player_score < opponent_score:
+        return 0.0  # Player Loses
+    else:
+        return 0.5  # Tie / Split Pot
+
+
+def exact_river_range_evaluation(player_hand, opponent_range, board_cards):
+    """
+    Loops through the opponent's range on the river and averages the exact equity.
+    """
+    total_equity = 0
+    valid_hands_counted = 0
+    
+    for opp_hand in opponent_range:
+        # Optional: Add logic here to skip hands that overlap with board cards/player hand
+        
+        # Get the exact Win/Loss/Tie for this specific hand combo
+        hand_equity = evaluate_single_river_hand(player_hand, opp_hand, board_cards)
+        
+        total_equity += hand_equity
+        valid_hands_counted += 1
+        
+    # Return the average equity against the entire range
+    if valid_hands_counted == 0:
+        return 0 
+    return total_equity / valid_hands_counted
+
+
+def calculate_master_equity(player_hand, opponent_range, board_cards):
+    """
+    The MASTER function that decides which math engine to use based on the street.
+    Call this function when the user clicks 'Calculate' in your Streamlit app.
+    """
+    
+    # RIVER (5 cards on board) -> Plain and Simple Exact Math
+    if len(board_cards) == 5:
+        return exact_river_range_evaluation(player_hand, opponent_range, board_cards)
+        
+    # FLOP (3 cards) or TURN (4 cards) -> Monte Carlo Simulation
+    elif len(board_cards) in [3, 4]:
+        # ---------------------------------------------------------
+        # INSERT YOUR EXISTING MONTE CARLO FUNCTION HERE
+        # Example: return my_monte_carlo(player_hand, opponent_range, board_cards, iterations=10000)
+        pass
+        # ---------------------------------------------------------
+        
+    # PREFLOP (0 cards)
+    else:
+        # Preflop logic (Usually a larger Monte Carlo or a pre-calculated lookup table)
+        pass
 
 # ---------------------------------------------------------------
 # HELPERS
