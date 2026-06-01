@@ -421,7 +421,7 @@ with tab_ranges:
     with rb_col2:
         preview_fig = draw_range_preview(st.session_state.custom_ranges[rb_pos][rb_act])
         st.pyplot(preview_fig)
-        plt.close(preview_fig)    }
+        plt.close(preview_fig)    
     div.stButton > button:first-child:hover, div.stButton > button:first-child:hover * {
         background-color: #E6C200 !important;
         color: black !important;
