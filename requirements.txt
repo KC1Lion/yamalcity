@@ -3,4 +3,4 @@ numpy<2.0.0
 pandas
 matplotlib
 seaborn
-treys
+treys==0.1.3
