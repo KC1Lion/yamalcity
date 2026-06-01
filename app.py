@@ -13,6 +13,11 @@ st.set_page_config(page_title="YAMALcity.pokahh - Calculator", layout="wide")
 
 st.markdown("""
     <style>
+    /* HIDE STREAMLIT BRANDING & MENUS */
+    [data-testid="stHeader"] {visibility: hidden;}
+    [data-testid="stToolbar"] {visibility: hidden;}
+    footer {visibility: hidden;}
+
     /* Forces the app to allow pinch-to-zoom on mobile */
     html, body, [class*="css"] {
         touch-action: manipulation;
