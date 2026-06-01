@@ -13,10 +13,12 @@ st.set_page_config(page_title="YAMALcity.pokahh - Calculator", layout="wide")
 
 st.markdown("""
     <style>
-    /* HIDE STREAMLIT BRANDING & MENUS */
-    [data-testid="stHeader"] {visibility: hidden;}
-    [data-testid="stToolbar"] {visibility: hidden;}
-    footer {visibility: hidden;}
+    /* HIDE ALL STREAMLIT BRANDING, MENUS, AND CLOUD BADGES */
+    [data-testid="stHeader"] {display: none !important;}
+    [data-testid="stToolbar"] {display: none !important;}
+    [data-testid="viewerBadge"] {display: none !important;}
+    .viewerBadge_container {display: none !important;}
+    footer {display: none !important;}
 
     /* Forces the app to allow pinch-to-zoom on mobile */
     html, body, [class*="css"] {
